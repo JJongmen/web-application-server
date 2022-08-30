@@ -61,6 +61,11 @@ public class HttpRequestUtils {
         return startLine.split(" ")[1];
     }
 
+    public static String getQueryString(String requestUri) {
+        requestUri.indexOf('?');
+        return requestUri.substring(requestUri.indexOf('?') + 1);
+    }
+
     public static class Pair {
         String key;
         String value;

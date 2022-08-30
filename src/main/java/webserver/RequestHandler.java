@@ -2,10 +2,13 @@ package webserver;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.HttpRequestUtils;
@@ -25,22 +28,23 @@ public class RequestHandler extends Thread {
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
-            BufferedReader br = new BufferedReader(new InputStreamReader(in));
+            BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
             String requestUri = HttpRequestUtils.parseUri(br.readLine());
             log.debug("Request URI = {}", requestUri);
-            String line;
-            while (!"".equals(line = br.readLine()) && line != null) {
-                log.debug(line);
+//            String line;
+//            while (!"".equals(line = br.readLine()) && line != null) {
+//                log.debug(line);
+//            }
+            if (requestUri.startsWith("/user/create?")) {
+                String queryString = HttpRequestUtils.getQueryString(requestUri);
+                Map<String, String> parameters = HttpRequestUtils.parseQueryString(queryString);
+                User user = new User(parameters.get("userId"), parameters.get("password"), parameters.get("name"), parameters.get("email"));
+                log.debug("user = {}", user);
             }
 
             byte[] body = null;
             DataOutputStream dos = new DataOutputStream(out);
-            if (requestUri.equals("/index.html")) {
-                body = Files.readAllBytes(new File("./webapp" + requestUri).toPath());
-            }
-            if (requestUri.equals("/")) {
-                body = "Hello World".getBytes();
-            }
+            body = Files.readAllBytes(new File("./webapp" + requestUri).toPath());
             try {
                 response200Header(dos, body.length);
             } catch (NullPointerException e) {

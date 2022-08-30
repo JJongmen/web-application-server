@@ -82,4 +82,10 @@ public class HttpRequestUtilsTest {
         String uri = HttpRequestUtils.parseUri("GET /index.html HTTP/1.1");
         assertEquals("/index.html", uri);
     }
+
+    @Test
+    public void getQueryString() throws Exception {
+        String requestUri = "/user/create?userId=abc&password=123&name=jyp&email=jyp%40gmail.com";
+        assertEquals("userId=abc&password=123&name=jyp&email=jyp%40gmail.com", HttpRequestUtils.getQueryString(requestUri));
+    }
 }
