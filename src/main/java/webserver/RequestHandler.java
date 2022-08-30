@@ -4,12 +4,15 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import db.DataBase;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +26,12 @@ public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
 
     private Socket connection;
+    private static final Map<Integer, String> statusCodeMap = new HashMap<>();
+    static {
+        statusCodeMap.put(200, "OK");
+        statusCodeMap.put(302, "Found");
+        statusCodeMap.put(400, "Bad Request");
+    }
 
     public RequestHandler(Socket connectionSocket) {
         this.connection = connectionSocket;
@@ -51,35 +60,40 @@ public class RequestHandler extends Thread {
             if (httpMethod.equals("POST")) {
                 formData = getFormData(br, contentLength);
             }
-
+            
+            // 회원가입 요청
             if (requestUri.equals("/user/create")) {
-                Map<String, String> parameters = parseQueryString(formData);
-                User user = new User(parameters.get("userId"), parameters.get("password"), parameters.get("name"), parameters.get("email"));
-                log.debug("user = {}", user);
+                signUp(out, formData);
+                return;
             }
 
-//            if (requestUri.startsWith("/user/create?")) {
-//                String queryString = HttpRequestUtils.getQueryString(requestUri);
-//                Map<String, String> parameters = HttpRequestUtils.parseQueryString(queryString);
-//                User user = new User(parameters.get("userId"), parameters.get("password"), parameters.get("name"), parameters.get("email"));
-//                log.debug("user = {}", user);
-//            }
-
-            byte[] body = null;
             DataOutputStream dos = new DataOutputStream(out);
-            body = Files.readAllBytes(new File("./webapp" + requestUri).toPath());
             try {
+                byte[] body = Files.readAllBytes(getFilePath(requestUri));
                 response200Header(dos, body.length);
-            } catch (NullPointerException e) {
-                log.debug("Client Request URI : {}", requestUri);
-                log.debug("Response Bad Request");
-                body = "Invalid URL. Please try again".getBytes();
-                response400Header(dos, body.length);
+                responseBody(dos, body);
+            } catch (Exception e) {
+                response404Header(dos);
             }
-            responseBody(dos, body);
         } catch (IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    private void signUp(OutputStream out, String formData) {
+        Map<String, String> parameters = parseQueryString(formData);
+        User user = new User(parameters.get("userId"), parameters.get("password"), parameters.get("name"), parameters.get("email"));
+        DataBase.addUser(user);
+        log.debug("Add User to DataBase : {}", user);
+
+        DataOutputStream dos = new DataOutputStream(out);
+        String newUrl = "/index.html";
+        response302Header(dos, newUrl);
+        log.debug("Redirecting to {}", newUrl);
+    }
+
+    private static Path getFilePath(String requestUri) {
+        return new File("./webapp" + requestUri).toPath();
     }
 
     private int getContentLength(BufferedReader br) throws IOException {
@@ -113,11 +127,19 @@ public class RequestHandler extends Thread {
         }
     }
 
-    private void response400Header(DataOutputStream dos, int lengthOfBodyContent) {
+    private void response302Header(DataOutputStream dos, String newUrl) {
         try {
-            dos.writeBytes("HTTP/1.1 400 BAD REQUEST \r\n");
-            dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
-            dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+            dos.writeBytes("HTTP/1.1 302 Found \r\n");
+            dos.writeBytes("Location: " + newUrl + "\r\n");
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void response404Header(DataOutputStream dos) {
+        try {
+            dos.writeBytes("HTTP/1.1 404 Not Found \r\n");
             dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
