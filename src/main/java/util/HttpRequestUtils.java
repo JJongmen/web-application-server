@@ -53,6 +53,14 @@ public class HttpRequestUtils {
         return getKeyValue(header, ": ");
     }
 
+    public static String parseMethod(String startLine) {
+        return startLine.split(" ")[0];
+    }
+
+    public static String parseUri(String startLine) {
+        return startLine.split(" ")[1];
+    }
+
     public static class Pair {
         String key;
         String value;

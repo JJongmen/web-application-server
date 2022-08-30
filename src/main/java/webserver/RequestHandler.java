@@ -1,13 +1,14 @@
 package webserver;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.HttpRequestUtils;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -24,9 +25,30 @@ public class RequestHandler extends Thread {
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
+            BufferedReader br = new BufferedReader(new InputStreamReader(in));
+            String requestUri = HttpRequestUtils.parseUri(br.readLine());
+            log.debug("Request URI = {}", requestUri);
+            String line;
+            while (!"".equals(line = br.readLine()) && line != null) {
+                log.debug(line);
+            }
+
+            byte[] body = null;
             DataOutputStream dos = new DataOutputStream(out);
-            byte[] body = "Hello World".getBytes();
-            response200Header(dos, body.length);
+            if (requestUri.equals("/index.html")) {
+                body = Files.readAllBytes(new File("./webapp" + requestUri).toPath());
+            }
+            if (requestUri.equals("/")) {
+                body = "Hello World".getBytes();
+            }
+            try {
+                response200Header(dos, body.length);
+            } catch (NullPointerException e) {
+                log.debug("Client Request URI : {}", requestUri);
+                log.debug("Response Bad Request");
+                body = "Invalid URL. Please try again".getBytes();
+                response400Header(dos, body.length);
+            }
             responseBody(dos, body);
         } catch (IOException e) {
             log.error(e.getMessage());
@@ -36,6 +58,17 @@ public class RequestHandler extends Thread {
     private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
         try {
             dos.writeBytes("HTTP/1.1 200 OK \r\n");
+            dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
+            dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void response400Header(DataOutputStream dos, int lengthOfBodyContent) {
+        try {
+            dos.writeBytes("HTTP/1.1 400 BAD REQUEST \r\n");
             dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
             dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
             dos.writeBytes("\r\n");
