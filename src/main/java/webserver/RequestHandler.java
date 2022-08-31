@@ -13,6 +13,7 @@ import message.HttpRequestMessage;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.HttpRequestUtils;
 
 import static util.HttpRequestUtils.*;
 import static util.IOUtils.*;
@@ -61,16 +62,29 @@ public class RequestHandler extends Thread {
                 return;
             }
 
+            // 사용자 목록 요청
+            if (requestUri.equals("/user/list") && httpMethod.equals("GET") && !isLogined(requestMessage)) {
+                response302Header(dos, "/user/login.html");
+            }
+
             try {
-                byte[] body = Files.readAllBytes(getFilePath(requestUri));
-                response200Header(dos, body.length);
-                responseBody(dos, body);
+                render(dos, requestUri);
             } catch (Exception e) {
                 response404Header(dos);
             }
         } catch (IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    private static boolean isLogined(HttpRequestMessage requestMessage) {
+        return Boolean.parseBoolean(parseCookies(requestMessage.getHeaderValue("Cookie")).getOrDefault("logined", "false"));
+    }
+
+    private void render(DataOutputStream dos, String requestUri) throws IOException {
+        byte[] body = Files.readAllBytes(getFilePath(requestUri));
+        response200Header(dos, body.length);
+        responseBody(dos, body);
     }
 
     private void login(String formData, DataOutputStream dos) {
@@ -96,6 +110,9 @@ public class RequestHandler extends Thread {
     }
 
     private static Path getFilePath(String requestUri) {
+        if (!requestUri.contains(".")) {
+            requestUri += ".html";
+        }
         return new File("./webapp" + requestUri).toPath();
     }
 

@@ -50,6 +50,10 @@ public class HttpRequestMessage {
         return headers;
     }
 
+    public String getHeaderValue(String header) {
+        return headers.get(header);
+    }
+
     public String getBody() {
         return body;
     }
