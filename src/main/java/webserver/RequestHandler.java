@@ -5,19 +5,14 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import db.DataBase;
+import message.HttpRequestMessage;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import util.HttpRequestUtils;
-import util.IOUtils;
 
 import static util.HttpRequestUtils.*;
 import static util.IOUtils.*;
@@ -43,31 +38,29 @@ public class RequestHandler extends Thread {
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
-            BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+            HttpRequestMessage requestMessage = new HttpRequestMessage(in);
+            DataOutputStream dos = new DataOutputStream(out);
 
             // Start Line 읽기
-            String startLine = br.readLine();
-            String requestUri = parseUri(startLine);
-            String httpMethod = parseMethod(startLine);
-            log.debug("Request URI = {}", requestUri);
-            log.debug("HTTP Method = {}", httpMethod);
+            String requestUri = requestMessage.getUri();
+            String httpMethod = requestMessage.getMethod();
+            log.debug(httpMethod + " " + requestUri);
 
-            // HTTP Header 읽기
-            int contentLength = getContentLength(br);
+            String formData = requestMessage.getBody();
+            log.debug("body={}",formData);
 
-            // HTTP Request Body 읽기
-            String formData = null;
-            if (httpMethod.equals("POST")) {
-                formData = getFormData(br, contentLength);
-            }
-            
             // 회원가입 요청
-            if (requestUri.equals("/user/create")) {
+            if (requestUri.equals("/user/create") && httpMethod.equals("POST")) {
                 signUp(out, formData);
                 return;
             }
 
-            DataOutputStream dos = new DataOutputStream(out);
+            // 로그인 요청
+            if (requestUri.equals("/user/login") && httpMethod.equals("POST")) {
+                login(formData, dos);
+                return;
+            }
+
             try {
                 byte[] body = Files.readAllBytes(getFilePath(requestUri));
                 response200Header(dos, body.length);
@@ -78,6 +71,16 @@ public class RequestHandler extends Thread {
         } catch (IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    private void login(String formData, DataOutputStream dos) {
+        Map<String, String> parameters = parseQueryString(formData);
+        User findUser = DataBase.findUserById(parameters.get("userId"));
+        responseLoginHeader(dos, correctLoginInfo(parameters, findUser));
+    }
+
+    private static boolean correctLoginInfo(Map<String, String> parameters, User findUser) {
+        return findUser != null && findUser.getPassword().equals(parameters.get("password"));
     }
 
     private void signUp(OutputStream out, String formData) {
@@ -96,26 +99,6 @@ public class RequestHandler extends Thread {
         return new File("./webapp" + requestUri).toPath();
     }
 
-    private int getContentLength(BufferedReader br) throws IOException {
-        String line;
-        int contentLength = 0;
-        while (!"".equals(line = br.readLine())) {
-            Pair headerPair = parseHeader(line);
-            if (headerPair.getKey().equals("Content-Length")) {
-                contentLength = Integer.parseInt(headerPair.getValue());
-                log.debug("Content-Length = {}", contentLength);
-            }
-        }
-        return contentLength;
-    }
-
-    private String getFormData(BufferedReader br, int contentLength) throws IOException {
-        String formData;
-        formData = readData(br, contentLength);
-        log.debug("formData = {}", formData);
-        return formData;
-    }
-
     private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
         try {
             dos.writeBytes("HTTP/1.1 200 OK \r\n");
@@ -131,6 +114,18 @@ public class RequestHandler extends Thread {
         try {
             dos.writeBytes("HTTP/1.1 302 Found \r\n");
             dos.writeBytes("Location: " + newUrl + "\r\n");
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void responseLoginHeader(DataOutputStream dos, boolean success) {
+        String newUrl = success ? "/index.html" : "/user/login_failed.html";
+        try {
+            dos.writeBytes("HTTP/1.1 302 Found \r\n");
+            dos.writeBytes("Location: " + newUrl + "\r\n");
+            dos.writeBytes("Set-Cookie: logined=" + success + " \r\n");
             dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
