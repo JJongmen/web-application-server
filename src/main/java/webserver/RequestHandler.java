@@ -2,7 +2,6 @@ package webserver;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -13,10 +12,8 @@ import message.HttpRequestMessage;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import util.HttpRequestUtils;
 
 import static util.HttpRequestUtils.*;
-import static util.IOUtils.*;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -47,6 +44,7 @@ public class RequestHandler extends Thread {
             String httpMethod = requestMessage.getMethod();
             log.debug(httpMethod + " " + requestUri);
 
+            // Request Message Body 읽기
             String formData = requestMessage.getBody();
             log.debug("body={}",formData);
 
@@ -68,7 +66,7 @@ public class RequestHandler extends Thread {
             }
 
             try {
-                render(dos, requestUri);
+                render(dos, requestUri, getContentType(requestMessage));
             } catch (Exception e) {
                 response404Header(dos);
             }
@@ -77,13 +75,19 @@ public class RequestHandler extends Thread {
         }
     }
 
+    private static String getContentType(HttpRequestMessage requestMessage) {
+        String accept = requestMessage.getHeaderValue("Accept");
+        String contentType = accept.split(",")[0];
+        return contentType;
+    }
+
     private static boolean isLogined(HttpRequestMessage requestMessage) {
         return Boolean.parseBoolean(parseCookies(requestMessage.getHeaderValue("Cookie")).getOrDefault("logined", "false"));
     }
 
-    private void render(DataOutputStream dos, String requestUri) throws IOException {
-        byte[] body = Files.readAllBytes(getFilePath(requestUri));
-        response200Header(dos, body.length);
+    private void render(DataOutputStream dos, String requestUri, String contentType) throws IOException {
+        byte[] body = Files.readAllBytes(getFilePath(requestUri, contentType));
+        response200Header(dos, body.length, contentType);
         responseBody(dos, body);
     }
 
@@ -109,23 +113,38 @@ public class RequestHandler extends Thread {
         log.debug("Redirecting to {}", newUrl);
     }
 
-    private static Path getFilePath(String requestUri) {
-        if (!requestUri.contains(".")) {
-            requestUri += ".html";
+    private static Path getFilePath(String requestUri, String contentType) {
+        StringBuilder sb = new StringBuilder("./webapp");
+        sb.append(requestUri);
+        if (contentType.equals("text/html") && !requestUri.endsWith(".html")) {
+            sb.append(".html");
         }
-        return new File("./webapp" + requestUri).toPath();
+        return new File(sb.toString()).toPath();
     }
 
-    private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
+    private void response200Header(DataOutputStream dos, int lengthOfBodyContent, String contentType) {
         try {
             dos.writeBytes("HTTP/1.1 200 OK \r\n");
-            dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
+            dos.writeBytes("Content-Type: " + contentType + ";charset=utf-8\r\n");
             dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
             dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
         }
     }
+
+    private void responseCss(DataOutputStream dos, int lengthOfBodyContent) {
+        try {
+            dos.writeBytes("HTTP/1.1 200 OK \r\n");
+            dos.writeBytes("Content-Type: text/css; charset=utf-8\r\n");
+            dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+
 
     private void response302Header(DataOutputStream dos, String newUrl) {
         try {
