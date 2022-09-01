@@ -62,7 +62,6 @@ public class HttpRequestUtils {
     }
 
     public static String getQueryString(String requestUri) {
-        requestUri.indexOf('?');
         return requestUri.substring(requestUri.indexOf('?') + 1);
     }
 

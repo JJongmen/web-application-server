@@ -4,11 +4,9 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 
 import db.DataBase;
-import message.HttpRequestMessage;
+import http.HttpRequest;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,12 +17,6 @@ public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
 
     private Socket connection;
-    private static final Map<Integer, String> statusCodeMap = new HashMap<>();
-    static {
-        statusCodeMap.put(200, "OK");
-        statusCodeMap.put(302, "Found");
-        statusCodeMap.put(400, "Bad Request");
-    }
 
     public RequestHandler(Socket connectionSocket) {
         this.connection = connectionSocket;
@@ -36,37 +28,37 @@ public class RequestHandler extends Thread {
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
-            HttpRequestMessage requestMessage = new HttpRequestMessage(in);
+            HttpRequest request = new HttpRequest(in);
             DataOutputStream dos = new DataOutputStream(out);
 
             // Start Line 읽기
-            String requestUri = requestMessage.getUri();
-            String httpMethod = requestMessage.getMethod();
+            String requestUri = request.getUri();
+            String httpMethod = request.getMethod();
             log.debug(httpMethod + " " + requestUri);
 
             // Request Message Body 읽기
-            String formData = requestMessage.getBody();
+            String formData = request.getBody();
             log.debug("body={}",formData);
 
             // 회원가입 요청
             if (requestUri.equals("/user/create") && httpMethod.equals("POST")) {
-                signUp(out, formData);
+                signUp(out, request);
                 return;
             }
 
             // 로그인 요청
             if (requestUri.equals("/user/login") && httpMethod.equals("POST")) {
-                login(formData, dos);
+                login(request, dos);
                 return;
             }
 
             // 사용자 목록 요청
-            if (requestUri.equals("/user/list") && httpMethod.equals("GET") && !isLogined(requestMessage)) {
+            if (requestUri.equals("/user/list") && httpMethod.equals("GET") && !isLogined(request)) {
                 response302Header(dos, "/user/login.html");
             }
 
             try {
-                render(dos, requestUri, getContentType(requestMessage));
+                render(dos, requestUri, getContentType(request));
             } catch (Exception e) {
                 response404Header(dos);
             }
@@ -75,14 +67,14 @@ public class RequestHandler extends Thread {
         }
     }
 
-    private static String getContentType(HttpRequestMessage requestMessage) {
-        String accept = requestMessage.getHeaderValue("Accept");
+    private static String getContentType(HttpRequest requestMessage) {
+        String accept = requestMessage.getHeader("Accept");
         String contentType = accept.split(",")[0];
         return contentType;
     }
 
-    private static boolean isLogined(HttpRequestMessage requestMessage) {
-        return Boolean.parseBoolean(parseCookies(requestMessage.getHeaderValue("Cookie")).getOrDefault("logined", "false"));
+    private static boolean isLogined(HttpRequest requestMessage) {
+        return Boolean.parseBoolean(parseCookies(requestMessage.getHeader("Cookie")).getOrDefault("logined", "false"));
     }
 
     private void render(DataOutputStream dos, String requestUri, String contentType) throws IOException {
@@ -91,19 +83,17 @@ public class RequestHandler extends Thread {
         responseBody(dos, body);
     }
 
-    private void login(String formData, DataOutputStream dos) {
-        Map<String, String> parameters = parseQueryString(formData);
-        User findUser = DataBase.findUserById(parameters.get("userId"));
-        responseLoginHeader(dos, correctLoginInfo(parameters, findUser));
+    private void login(HttpRequest request, DataOutputStream dos) {
+        User findUser = DataBase.findUserById(request.getParameter("userId"));
+        responseLoginHeader(dos, correctLoginInfo(request, findUser));
     }
 
-    private static boolean correctLoginInfo(Map<String, String> parameters, User findUser) {
-        return findUser != null && findUser.getPassword().equals(parameters.get("password"));
+    private static boolean correctLoginInfo(HttpRequest request, User findUser) {
+        return findUser != null && findUser.getPassword().equals(request.getParameter("password"));
     }
 
-    private void signUp(OutputStream out, String formData) {
-        Map<String, String> parameters = parseQueryString(formData);
-        User user = new User(parameters.get("userId"), parameters.get("password"), parameters.get("name"), parameters.get("email"));
+    private void signUp(OutputStream out, HttpRequest request) {
+        User user = new User(request.getParameter("userId"), request.getParameter("password"), request.getParameter("name"), request.getParameter("email"));
         DataBase.addUser(user);
         log.debug("Add User to DataBase : {}", user);
 
@@ -132,19 +122,6 @@ public class RequestHandler extends Thread {
             log.error(e.getMessage());
         }
     }
-
-    private void responseCss(DataOutputStream dos, int lengthOfBodyContent) {
-        try {
-            dos.writeBytes("HTTP/1.1 200 OK \r\n");
-            dos.writeBytes("Content-Type: text/css; charset=utf-8\r\n");
-            dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
-            dos.writeBytes("\r\n");
-        } catch (IOException e) {
-            log.error(e.getMessage());
-        }
-    }
-
-
 
     private void response302Header(DataOutputStream dos, String newUrl) {
         try {

@@ -1,0 +1,4 @@
+GET /user/create?userId=jjongmen&password=password&name=jyp HTTP/1.1
+HOST: localhost:9090
+Connection: keep-alive
+Accept: */*
