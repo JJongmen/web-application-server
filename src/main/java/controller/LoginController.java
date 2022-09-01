@@ -6,7 +6,6 @@ import http.HttpResponse;
 import model.User;
 
 public class LoginController extends AbstractController implements Controller {
-
     @Override
     void doPost(HttpRequest request, HttpResponse response) {
         User findUser = DataBase.findUserById(request.getParameter("userId"));
