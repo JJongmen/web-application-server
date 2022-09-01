@@ -57,10 +57,6 @@ public class HttpRequest {
         return startLine.getMethod();
     }
 
-    public String getUri() {
-        return startLine.getUri();
-    }
-
     public String getPath() {
         return startLine.getPath();
     }
@@ -71,10 +67,6 @@ public class HttpRequest {
 
     public String getHeader(String header) {
         return headers.get(header);
-    }
-
-    public String getBody() {
-        return body;
     }
 
     private class StartLine {
