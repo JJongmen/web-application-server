@@ -36,21 +36,25 @@ public class RequestHandler extends Thread {
             HttpRequest request = new HttpRequest(in);
             HttpResponse response = new HttpResponse(out);
 
-            // Start Line 읽기
-            String requestUri = request.getPath();
-            log.debug(request.getMethod() + " " + requestUri);
+            String path = getDefaultPath(request.getPath());
+            log.debug(request.getMethod() + " " + path);
 
-            Controller controller = controllerMap.get(requestUri);
+            Controller controller = controllerMap.get(path);
             if (controller != null) {
                 controller.service(request, response);
                 return;
             }
 
-            String contentType = request.getHeader("Accept").split(",")[0];
-            contentType = "*/*".equals(contentType) ? "text/html" : contentType;
-            response.forward(requestUri, contentType);
+            response.forward(path);
         } catch (IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    private String getDefaultPath(String path) {
+        if (path.equals("/")) {
+            return "/index.html";
+        }
+        return path;
     }
 }

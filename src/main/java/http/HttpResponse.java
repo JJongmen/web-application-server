@@ -26,16 +26,18 @@ public class HttpResponse {
     public void forward(String url) {
         try {
             byte[] body = Files.readAllBytes(getFilePath(url));
+            if (url.endsWith(".css")) {
+                addHeader("Content-Type", "text/css");
+            } else if (url.endsWith(".javascript")) {
+                addHeader("Content-Type", "application/javascript");
+            } else {
+                addHeader("Content-Type", "text/html;charset=utf-8");
+            }
             response200Header(body.length);
             responseBody(body);
         } catch (IOException e) {
             log.error(e.getMessage());
         }
-    }
-
-    public void forward(String url, String contentType) {
-        addHeader("Content-Type", contentType + ";charset=utf-8");
-        forward(url);
     }
 
     public void sendRedirect(String newUrl) {
@@ -48,12 +50,8 @@ public class HttpResponse {
         }
     }
 
-    public void addHeader(String header, String value) {
-        if (headers.containsKey(header)) {
-            headers.put(header, headers.get(header) + "," + value);
-            return;
-        }
-        headers.put(header, value);
+    public void addHeader(String key, String value) {
+        headers.put(key, value);
     }
 
     private static Path getFilePath(String requestUri) {
@@ -89,13 +87,9 @@ public class HttpResponse {
     }
 
     public void forwardBody(String body) {
-        try {
-            byte[] content = body.getBytes();
-            response200Header(content.length);
-            dos.write(content, 0, content.length);
-            dos.flush();
-        } catch (IOException e) {
-            log.error(e.getMessage());
-        }
+        byte[] content = body.getBytes();
+        addHeader("Content-Type", "text/html;charset=utf-8");
+        response200Header(content.length);
+        responseBody(content);
     }
 }

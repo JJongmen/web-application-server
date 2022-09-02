@@ -9,7 +9,7 @@ public class HttpHeadersTest {
     public void addHeader() throws Exception {
         HttpHeaders headers = new HttpHeaders();
 
-        headers.addHeader("Set-Cookie: logined=true");
+        headers.parseHeader("Set-Cookie: logined=true");
 
         assertEquals("logined=true", headers.getHeader("Set-Cookie"));
     }
@@ -17,7 +17,7 @@ public class HttpHeadersTest {
     @Test
     public void getContentLength() throws Exception {
         HttpHeaders headers = new HttpHeaders();
-        headers.addHeader("Content-Length: 100");
+        headers.parseHeader("Content-Length: 100");
 
         assertEquals(100, headers.getContentLength());
     }

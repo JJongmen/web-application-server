@@ -7,7 +7,7 @@ public class HttpHeaders {
     private final String CONTENT_LENGTH = "Content-Length";
     private Map<String, String> headers = new HashMap<>();
 
-    void addHeader(String line) {
+    void parseHeader(String line) {
         String[] tokens = line.split(":");
         headers.put(tokens[0].trim(), tokens[1].trim());
     }
