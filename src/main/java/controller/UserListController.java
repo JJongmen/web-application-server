@@ -31,6 +31,10 @@ public class UserListController extends AbstractController {
     }
 
     private static boolean isLogined(HttpRequest request) {
-        return Boolean.parseBoolean(parseCookies(request.getHeader("Cookie")).getOrDefault("logined", "false"));
+        String logined = request.getCookie("logined");
+        if (logined == null) {
+            return false;
+        }
+        return Boolean.parseBoolean(logined);
     }
 }

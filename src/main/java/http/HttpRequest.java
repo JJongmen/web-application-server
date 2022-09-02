@@ -30,6 +30,7 @@ public class HttpRequest {
         while (!"".equals(line = br.readLine()) && line != null) {
             headers.parseHeader(line);
         }
+        headers.processCookie();
     }
 
     private void readRequestLine(BufferedReader br) throws IOException {
@@ -51,5 +52,9 @@ public class HttpRequest {
 
     public String getHeader(String name) {
         return headers.getHeader(name);
+    }
+
+    public String getCookie(String name) {
+        return headers.getCookie(name);
     }
 }

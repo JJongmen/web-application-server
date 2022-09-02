@@ -19,15 +19,15 @@ public class RequestLine {
         }
     }
 
-    public HttpMethod getMethod() {
+    HttpMethod getMethod() {
         return method;
     }
 
-    public String getPath() {
+    String getPath() {
         return path;
     }
 
-    public String getQueryString() {
+    String getQueryString() {
         return queryString;
     }
 }

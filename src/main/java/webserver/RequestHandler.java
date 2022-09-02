@@ -5,10 +5,7 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 
-import controller.Controller;
-import controller.LoginController;
-import controller.SignUpController;
-import controller.UserListController;
+import controller.*;
 import http.HttpRequest;
 import http.HttpResponse;
 import org.slf4j.Logger;
@@ -18,13 +15,9 @@ public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
 
     private Socket connection;
-    private static final Map<String, Controller> controllerMap = new HashMap<>();
 
     public RequestHandler(Socket connectionSocket) {
         this.connection = connectionSocket;
-        controllerMap.put("/user/list", new UserListController());
-        controllerMap.put("/user/login", new LoginController());
-        controllerMap.put("/user/create", new SignUpController());
     }
 
     public void run() {
@@ -39,7 +32,7 @@ public class RequestHandler extends Thread {
             String path = getDefaultPath(request.getPath());
             log.debug(request.getMethod() + " " + path);
 
-            Controller controller = controllerMap.get(path);
+            Controller controller = RequestMapping.getController(path);
             if (controller != null) {
                 controller.service(request, response);
                 return;

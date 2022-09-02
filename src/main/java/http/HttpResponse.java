@@ -50,6 +50,13 @@ public class HttpResponse {
         }
     }
 
+    public void forwardBody(String body) {
+        byte[] content = body.getBytes();
+        addHeader("Content-Type", "text/html;charset=utf-8");
+        response200Header(content.length);
+        responseBody(content);
+    }
+
     public void addHeader(String key, String value) {
         headers.put(key, value);
     }
@@ -84,12 +91,5 @@ public class HttpResponse {
         } catch (IOException e) {
             log.error(e.getMessage());
         }
-    }
-
-    public void forwardBody(String body) {
-        byte[] content = body.getBytes();
-        addHeader("Content-Type", "text/html;charset=utf-8");
-        response200Header(content.length);
-        responseBody(content);
     }
 }
