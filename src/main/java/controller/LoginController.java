@@ -5,9 +5,9 @@ import http.HttpRequest;
 import http.HttpResponse;
 import model.User;
 
-public class LoginController extends AbstractController implements Controller {
+public class LoginController extends AbstractController {
     @Override
-    void doPost(HttpRequest request, HttpResponse response) {
+    protected void doPost(HttpRequest request, HttpResponse response) {
         User findUser = DataBase.findUserById(request.getParameter("userId"));
         if (correctLoginInfo(request, findUser)) {
             response.addHeader("Set-Cookie", "logined=true");

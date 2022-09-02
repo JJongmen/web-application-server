@@ -1,21 +1,19 @@
 package controller;
 
+import http.HttpMethod;
 import http.HttpRequest;
 import http.HttpResponse;
 
 public abstract class AbstractController implements Controller {
     public void service(HttpRequest request, HttpResponse response) {
-        switch (request.getMethod()) {
-            case "GET" :
-                doGet(request, response);
-                break;
-            case "POST":
-                doPost(request, response);
-                break;
+        HttpMethod method = request.getMethod();
+        if (method == HttpMethod.GET) {
+            doGet(request, response);
+        } else {
+            doPost(request, response);
         }
     }
 
-    void doGet(HttpRequest request, HttpResponse response) {}
-
-    void doPost(HttpRequest request, HttpResponse response) {}
+    protected void doGet(HttpRequest request, HttpResponse response) {}
+    protected void doPost(HttpRequest request, HttpResponse response) {}
 }

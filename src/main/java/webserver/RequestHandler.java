@@ -2,9 +2,6 @@ package webserver;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,14 +9,10 @@ import controller.Controller;
 import controller.LoginController;
 import controller.SignUpController;
 import controller.UserListController;
-import db.DataBase;
 import http.HttpRequest;
 import http.HttpResponse;
-import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static util.HttpRequestUtils.*;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);

@@ -9,9 +9,9 @@ import java.util.Collection;
 
 import static util.HttpRequestUtils.parseCookies;
 
-public class UserListController extends AbstractController implements Controller {
+public class UserListController extends AbstractController {
     @Override
-    void doGet(HttpRequest request, HttpResponse response) {
+    protected void doGet(HttpRequest request, HttpResponse response) {
         if (!isLogined(request)) {
             response.sendRedirect("/user/login.html");
             return;
