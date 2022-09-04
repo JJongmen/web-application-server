@@ -2,14 +2,15 @@ package session;
 
 import org.junit.Test;
 
+import java.util.UUID;
+
 import static org.junit.Assert.*;
 
 public class HttpSessionTest {
 
     @Test
     public void setAttribute() throws Exception {
-        HttpSession session = new HttpSession();
-
+        HttpSession session = new HttpSession(UUID.randomUUID().toString());
         session.setAttribute("name", "jyp");
 
         assertEquals("jyp", session.getAttribute("name"));
@@ -17,7 +18,7 @@ public class HttpSessionTest {
 
     @Test
     public void removeAttribute() throws Exception {
-        HttpSession session = new HttpSession();
+        HttpSession session = new HttpSession(UUID.randomUUID().toString());
         session.setAttribute("name", "jyp");
 
         session.removeAttribute("name");
@@ -27,7 +28,7 @@ public class HttpSessionTest {
 
     @Test
     public void invalidate() throws Exception {
-        HttpSession session = new HttpSession();
+        HttpSession session = new HttpSession(UUID.randomUUID().toString());
         session.setAttribute("name", "jyp");
         session.setAttribute("Cookie", "logined=true");
 

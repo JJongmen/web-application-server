@@ -8,9 +8,8 @@ public class HttpSession {
     private String id;
     private Map<String, Object> attributes = new HashMap<>();
 
-    public HttpSession() {
-        IdGenerator idGenerator = new IdGenerator();
-        id = idGenerator.generateId(10);
+    public HttpSession(String sessionId) {
+        id = sessionId;
     }
 
     public String getId() {
@@ -30,7 +29,6 @@ public class HttpSession {
     }
 
     public void invalidate() {
-        attributes.clear();
+        HttpSessions.remove(id);
     }
-
 }

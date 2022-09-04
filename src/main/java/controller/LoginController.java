@@ -5,7 +5,6 @@ import http.HttpRequest;
 import http.HttpResponse;
 import model.User;
 import session.HttpSession;
-import session.SessionMapping;
 
 public class LoginController extends AbstractController {
     @Override

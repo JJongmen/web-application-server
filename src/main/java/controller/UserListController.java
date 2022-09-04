@@ -7,8 +7,6 @@ import model.User;
 
 import java.util.Collection;
 
-import static util.HttpRequestUtils.parseCookies;
-
 public class UserListController extends AbstractController {
     @Override
     protected void doGet(HttpRequest request, HttpResponse response) {
@@ -31,10 +29,6 @@ public class UserListController extends AbstractController {
     }
 
     private static boolean isLogined(HttpRequest request) {
-        String logined = request.getCookie("logined");
-        if (logined == null) {
-            return false;
-        }
-        return Boolean.parseBoolean(logined);
+        return request.getSession().getAttribute("user") != null;
     }
 }

@@ -1,7 +1,7 @@
 package http;
 
 import session.HttpSession;
-import util.HttpRequestUtils;
+import session.HttpSessions;
 import util.IOUtils;
 
 import java.io.BufferedReader;
@@ -9,14 +9,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 public class HttpRequest {
 
     private RequestLine requestLine;
     private HttpHeaders headers = new HttpHeaders();
     private RequestParams parameters = new RequestParams();
-    private HttpSession session;
 
     public HttpRequest(InputStream in) {
         try {
@@ -61,12 +59,7 @@ public class HttpRequest {
     public String getCookie(String name) {
         return headers.getCookie(name);
     }
-
-    public void setSession(HttpSession session) {
-        this.session = session;
-    }
-
     public HttpSession getSession() {
-        return session;
+        return HttpSessions.getSession(getCookie("JSESSIONID"));
     }
 }

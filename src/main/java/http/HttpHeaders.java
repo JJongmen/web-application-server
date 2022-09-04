@@ -1,14 +1,12 @@
 package http;
 
-import util.HttpRequestUtils;
-
 import java.util.HashMap;
 import java.util.Map;
 
 public class HttpHeaders {
     private final String CONTENT_LENGTH = "Content-Length";
     private Map<String, String> headers = new HashMap<>();
-    private Map<String, String> cookies = new HashMap<>();
+    private HttpCookie cookies;
 
     void parseHeader(String line) {
         String[] tokens = line.split(":");
@@ -16,7 +14,7 @@ public class HttpHeaders {
     }
 
     void processCookie() {
-        cookies = HttpRequestUtils.parseCookies(headers.get("Cookie"));
+        cookies = new HttpCookie(headers.get("Cookie"));
     }
 
     String getHeader(String name) {
@@ -36,6 +34,6 @@ public class HttpHeaders {
     }
 
     String getCookie(String name) {
-        return cookies.get(name);
+        return cookies.getCookie(name);
     }
 }
