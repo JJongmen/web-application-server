@@ -4,13 +4,16 @@ import db.DataBase;
 import http.HttpRequest;
 import http.HttpResponse;
 import model.User;
+import session.HttpSession;
+import session.SessionMapping;
 
 public class LoginController extends AbstractController {
     @Override
     protected void doPost(HttpRequest request, HttpResponse response) {
         User findUser = DataBase.findUserById(request.getParameter("userId"));
         if (correctLoginInfo(request, findUser)) {
-            response.addHeader("Set-Cookie", "logined=true");
+            HttpSession session = request.getSession();
+            session.setAttribute("user", findUser);
             response.sendRedirect("/index.html");
             return;
         }

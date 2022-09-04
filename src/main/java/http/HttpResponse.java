@@ -61,6 +61,13 @@ public class HttpResponse {
         headers.put(key, value);
     }
 
+    public void addCookie(String key, String value) {
+        StringBuilder sb = new StringBuilder(key)
+                                    .append('=')
+                                    .append(value);
+        headers.put("Set-Cookie", sb.toString());
+    }
+
     private static Path getFilePath(String requestUri) {
         StringBuilder sb = new StringBuilder("./webapp");
         sb.append(requestUri);

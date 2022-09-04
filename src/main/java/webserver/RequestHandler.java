@@ -10,6 +10,8 @@ import http.HttpRequest;
 import http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import session.HttpSession;
+import session.SessionMapping;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -32,6 +34,8 @@ public class RequestHandler extends Thread {
             String path = getDefaultPath(request.getPath());
             log.debug(request.getMethod() + " " + path);
 
+            processSession(request, response);
+
             Controller controller = RequestMapping.getController(path);
             if (controller != null) {
                 controller.service(request, response);
@@ -42,6 +46,19 @@ public class RequestHandler extends Thread {
         } catch (IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    private static void processSession(HttpRequest request, HttpResponse response) {
+        String sessionId = request.getCookie("Session-Id");
+        HttpSession session;
+        log.debug("sessionId : {}", sessionId);
+        if (sessionId == null) {
+            session = SessionMapping.createSession();
+            response.addCookie("Session-Id", session.getId());
+        } else {
+            session = SessionMapping.getSession(sessionId);
+        }
+        request.setSession(session);
     }
 
     private String getDefaultPath(String path) {
